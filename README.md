@@ -1,2 +1,2 @@
 # etymon
-Chrome-based TUI browser that can handle Javascript-reliant webpages
+Chrome-based TUI browser for Javascript-reliant webpages
