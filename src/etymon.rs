@@ -51,7 +51,7 @@ pub struct Etymon {
     #[allow(non_snake_case)]
     pub fn HANDLE_USER_INPUT(&mut self) -> Result<(), anyhow::Error> {
         let keys = std::io::stdin().keys();
-        ui::process_keys(&mut self.display, &self.mode, keys)?;
+        self.process_keys(keys)?;
         Ok(())
     }
 

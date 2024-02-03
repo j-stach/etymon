@@ -22,6 +22,7 @@ pub struct ConfigOptions {
     pub cursor_controls: CursorControls,
     pub fn_keymap: FnKeymap,
     pub char_keymap: CharKeymap,
+    pub alt_keymap: CharKeymap,
 } impl ConfigOptions {
 
     // TBD Read & parse config.toml
@@ -38,6 +39,7 @@ pub struct ConfigOptions {
             cursor_controls: CursorControls::WASD,
             fn_keymap: FnKeymap::default(),
             char_keymap: CharKeymap::default(),
+            alt_keymap: CharKeymap::default(),
         }
     }
 }
@@ -45,6 +47,7 @@ pub struct ConfigOptions {
 #[derive(Clone, Copy, Serialize, Deserialize)]
 pub enum CursorControls { WASD, HJKL }
 
+/// Fn key mappings are for static functions that take Etymon itself as the only argument.
 #[derive(Default, Serialize, Deserialize)]
 pub struct FnKeymap {   // TBD Needs type for script/ function to exec
     pub fn1:  Option<String>,

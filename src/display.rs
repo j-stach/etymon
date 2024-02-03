@@ -14,7 +14,6 @@ pub struct Display {
     pub terminal: Terminal<TermionBackend<AlternateScreen<RawTerminal<std::io::Stdout>>>>,
     pub tabs: VecDeque<TuiTab>,
     pub navbar: TuiNavbar,
-    pub cursor: TuiCursor,
     pub needs_update: bool,
 } impl Display {
 
@@ -25,7 +24,6 @@ pub struct Display {
                 terminal,
                 tabs: VecDeque::new(),
                 navbar: TuiNavbar::new(),
-                cursor: TuiCursor::new(),
                 needs_update: false,
             };
             Ok(display)
@@ -54,27 +52,16 @@ pub struct Display {
         self.tabs.iter().map(|t| t.name.clone()).collect()
     }
 
-    pub fn cursor(&self) -> &TuiCursor { &self.cursor }
-
-    pub fn move_cursor(&mut self, direction: CursorDirection) {
-        use CursorDirection::*;
+    pub fn move_cursor(&mut self, direction: CursorDirection) -> Result<(), anyhow::Error> {
+        let cursor = self.terminal.get_cursor()?;
+        use CursorDirection::*;     // TODO Needs to be more fluid and enable diagonals/holding down
         match direction {
-            Up    => self.cursor.travel( 0, 1),
-            Down  => self.cursor.travel( 0,-1),
-            Left  => self.cursor.travel(-1, 0),
-            Right => self.cursor.travel( 1, 0),
+            Up    => if cursor.1 > 0 { self.terminal.set_cursor(cursor.0, cursor.1 - 1)? },
+            Down  => self.terminal.set_cursor(cursor.0, cursor.1 + 1)?,
+            Left  => if cursor.0 > 0 { self.terminal.set_cursor(cursor.0 - 1, cursor.1)? },
+            Right => self.terminal.set_cursor(cursor.0 + 1, cursor.1)?,
         }
-    }
-
-    pub fn fast_cursor(&mut self, direction: CursorDirection, speed: u16) { // TODO Test
-        use CursorDirection::*;
-        let speed = speed as i16;
-        match direction {
-            Up    => self.cursor.travel( 0, speed),
-            Down  => self.cursor.travel( 0,-speed),
-            Left  => self.cursor.travel(-speed, 0),
-            Right => self.cursor.travel( speed, 0),
-        }
+        Ok(())
     }
 
     pub fn render(&mut self) -> Result<(), anyhow::Error> {
@@ -94,69 +81,6 @@ pub struct Display {
 #[derive(Clone, Copy)]
 pub enum CursorDirection { Up, Down, Left, Right }
 
-pub struct TuiCursor {
-    pub position: (u16, u16),
-    pub max: (u16, u16)
-} impl TuiCursor {
-
-    pub fn new() -> TuiCursor {
-        Self { position: (1, 1), max: (1, 1) }
-    }
-
-    pub fn check_x(&self, dest: u16) -> bool { dest <= self.max.0 }
-
-    pub fn check_y(&self, dest: u16) -> bool { dest <= self.max.1 }
-
-    pub fn travel(&mut self, x: i16, y: i16) {
-        let xabs = x.abs() as u16;
-        let yabs = y.abs() as u16;
-
-        if x > 0 {
-            if self.check_x(xabs + self.position.0) {
-                termion::cursor::Right(xabs);
-                self.position.0 += xabs;
-            } else {
-                termion::cursor::Right(self.position.0);
-                self.position.0 = self.max.0;
-            }
-        } else if x < 0 {
-            if self.check_x(self.position.0 - xabs) {
-                termion::cursor::Left(xabs);
-                self.position.0 -= xabs;
-            } else {
-                termion::cursor::Left(self.position.0);
-                self.position.0 = 0;
-            }
-        }
-
-        if y > 0 {
-            if self.check_y(yabs + self.position.0) {
-                termion::cursor::Up(yabs);
-                self.position.0 += yabs;
-            } else {
-                termion::cursor::Up(self.position.0);
-                self.position.0 = self.max.0;
-            }
-        } else if y < 0 {
-            if self.check_y(self.position.0 - yabs) {
-                termion::cursor::Down(yabs);
-                self.position.0 -= yabs;
-            } else {
-                termion::cursor::Down(self.position.0);
-                self.position.0 = 0;
-            }
-        }
-    }
-
-    pub fn move_to(&mut self, mut x: u16, mut y: u16) {
-        if !self.check_x(x) { x = self.max.0 }
-        if !self.check_x(y) { y = self.max.1 }
-
-        termion::cursor::Goto(x + 1, y + 1); // TODO Test, is this what (1, 1)-based means?
-        self.position = (x, y);
-    }
-
-}
 
 pub struct TuiNavbar {
     pub show_tabs: bool,

@@ -22,14 +22,18 @@ pub mod ui;
 
 pub mod etymon; pub use etymon::*;
 
+lazy_static::lazy_static!{
+    pub static ref RUN: std::sync::Mutex<bool> = std::sync::Mutex::new(true);
+}
+
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     println!("{}", termion::clear::All);
 
     let mut etymon = Etymon::init()?;
-    //etymon.new_tab(None)?;
-    loop {
-        //etymon.display.render()?;
+    etymon.new_tab(None)?;
+    while *RUN.lock().expect("Should get the lock for the run switch.") == true {
+        etymon.display.render()?;
         etymon.HANDLE_USER_INPUT()?;
         // handle user input from tui
     }
@@ -40,7 +44,7 @@ async fn main() -> Result<(), anyhow::Error> {
     // if send via headless, refresh tab
 
 
-    //Ok(println!("Hello, world!"))
+    Ok(println!("Hello, world!"))
 }
 
 
