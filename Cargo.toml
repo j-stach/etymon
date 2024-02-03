@@ -1,0 +1,24 @@
+[package]
+name = "etymon"
+version = "0.0.0"
+edition = "2021"
+authors = ["jstach"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.79"
+headless_chrome = "1.0.9"
+kuchikiki = "0.8.1"
+lazy_static = "1.4.0"
+reqwest = "0.11.23"
+serde = { version = "1.0.196", features = ["serde_derive", "derive"] }
+serde_json = "1.0.113"
+termion = "3.0.0"
+tokio = { version = "1.35.1", features = ["rt-multi-thread", "tracing", "macros"] }
+toml = "0.8.8"
+tracing = "0.1.40"
+ratatui = { version = "0.25.0", default-features = false, features = ["serde", "termion"] }
+url = { version = "2.5.0", features = ["serde"] }
+html5ever = "0.26.0"
+regex = "1.10.3"
