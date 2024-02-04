@@ -1,6 +1,6 @@
 
 //use headless_chrome as chrome;
-use super::display as tui;
+use super::tui;
 
 use kuchikiki::{traits::*, NodeRef, NodeData};
 use serde::{Serialize, Deserialize};
