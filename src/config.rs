@@ -10,7 +10,7 @@ use super::browser::NodeDataKind::{self, *};
 */
 
 lazy_static::lazy_static!{
-    /// Holds the configuration state for Etymon.
+    /// Holds the configuration values for Etymon & its children.
     pub static ref CONFIG: ConfigOptions = ConfigOptions::read_config();
 }
 
@@ -26,16 +26,18 @@ pub struct ConfigOptions {
     pub useful_nodes: HashSet<NodeDataKind>,
     /// Use WASD or HJKL for View-mode cursor control.
     pub cursor_controls: CursorControls,
-    /// Function keymaps call external scripts.
+    /// Function keymaps call external scripts by path.
     pub fn_keymap: FnKeymap,
     /// Character keymaps work in View mode.
     pub char_keymap: CharKeymap,
-    /// Alt + characters work in View and Edit mode.
+    /// Alt + characters work in both View and Edit mode.
     pub alt_keymap: CharKeymap,
     /// UI polling frequency (per second).
     pub tick_rate: f32,
     /// Screen refresh frequency (per second).
     pub frame_rate: f32,
+    /// Starts Edymon with mouse events enabled, if terminal supports them.
+    pub mouse_capture: bool,
     // TBD Font size
 } impl ConfigOptions {
 
@@ -44,6 +46,7 @@ pub struct ConfigOptions {
         Self::default_options()
     }
 
+    /// Private, minimal, and performant configuration with no bindings.
     fn default_options() -> ConfigOptions {
         ConfigOptions {
             homepage: "https://www.duckduckgo.com".to_owned(),
@@ -56,6 +59,7 @@ pub struct ConfigOptions {
             alt_keymap: CharKeymap::default(),
             tick_rate: 4.0,
             frame_rate: 60.0,
+            mouse_capture: false,
         }
     }
 }
@@ -63,31 +67,57 @@ pub struct ConfigOptions {
 #[derive(Clone, Copy, Serialize, Deserialize)]
 pub enum CursorControls { WASD, HJKL }
 
-/// Fn key mappings are for static functions that take Etymon itself as the only argument.
-#[derive(Default, Serialize, Deserialize)]
-pub struct FnKeymap {   // TBD Needs type for script/ function to exec
-    pub fn1:  Option<String>,
-    pub fn2:  Option<String>,
-    pub fn3:  Option<String>,
-    pub fn4:  Option<String>,
-    pub fn5:  Option<String>,
-    pub fn6:  Option<String>,
-    pub fn7:  Option<String>,
-    pub fn8:  Option<String>,
-    pub fn9:  Option<String>,
-    pub fn10: Option<String>,
-    pub fn11: Option<String>,
-    pub fn12: Option<String>,
-} impl FnKeymap {
-    pub fn serve_fn() {}
-    pub fn execute_rust() {}
-    pub fn execute_perl() {}
-    pub fn execute_lua() {}
-}
-
 #[derive(Default, Serialize, Deserialize)]
 pub struct CharKeymap {
     pub binds: std::collections::HashMap<char, String>
+}
+
+/// Fn key mappings are for static functions that take Etymon itself as the only argument.
+#[derive(Default, Serialize, Deserialize)]
+pub struct FnKeymap {
+    pub scripts: std::collections::HashMap<usize, FnScript>
+} impl FnKeymap {
+    pub fn serve_fn(&self, id: usize) -> Result<(), anyhow::Error> {
+        todo!{"Match id to fn key"}
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+/// Specify the executor to call for the mapped script. Easier for everyone this way.
+pub enum FnScript {
+    None,
+    Rust(()/* TBD Function Pointer? */),
+    Perl(String), // TBD Filepath type?
+    Lua(String),  // TBD Filepath type?
+} impl FnScript {
+
+    pub fn execute(&self) {
+        match self {
+            FnScript::None        => (),
+            FnScript::Rust(rust)  => FnScript::execute_rust(*rust),
+            FnScript::Perl(perl)  => FnScript::execute_perl(perl),
+            FnScript::Lua(lua)    => FnScript::execute_lua(lua),
+        }
+    }
+
+    pub fn execute_rust(rust: ()) {
+        todo!{"Execute rust functions from library on page, text, and browser"}
+    }
+
+    pub fn execute_perl(script_path: &str) {
+        todo!{"Execute perl scripts on page, text, and browser"}
+    }
+
+    pub fn execute_lua(script_path: &str) {
+        todo!{"Execute lua scripts on page, text, and browser"}
+    }
+}
+
+
+impl std::default::Default for FnScript {
+    fn default() -> Self {
+        FnScript::None
+    }
 }
 
 
