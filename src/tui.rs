@@ -190,50 +190,99 @@ pub struct TuiTab {
     }
 
     pub fn update(&mut self, dom: TuiNode, title: &str) -> Result<(), anyhow::Error> {
-        self.dom = dom;
+        self.dom = dom.collapse_phantoms();
         self.title = title.to_owned();
         self.update_layout();
         Ok(()) // TBD
     }
 
     pub fn update_layout(&mut self) {
+
+        let nav = self.dom.isolate_nav_elements();
+        // TBD Isolate nav elements: Find top nav bar & sidebar
+        // then, in descending order, flatten the tree into a stack of paragraphs
+
+
+
         let layout = Layout::default();
-        // TBD use dom to create layout?
-        // Find Phantom nodes & collapse
-        // Then when rendering, skip phantom nodes when calculating index
         self.layout = layout;
     }
+
 
 }
 
 
 
 
-
+//-------------------------------------------------------------------------------------
 
 
 
 
 
 /// Represents an HTML element tree as a TUI object.
-#[derive(Default)]
+#[derive(Clone)]
 pub struct TuiNode {
+    pub data: TuiNodeData,
     pub children: Vec<TuiNode>
+} impl TuiNode {
+    pub fn collapse_phantoms(mut self) -> Self {
+        // TBD Does it matter if the root node is a Phantom?
+        for (c, child) in self.children.iter().enumerate() {
+            child.collapse_phantoms();
+            if child.data.is_phantom() {
+                let (front, back) = self.children.split_at(c);
+                let (mut front, mut back) = (front.to_vec(), back.to_vec());
+                let c = front.pop().expect("Removed phantom");
+                let mut orphans = c.children.clone();
+                front.append(&mut orphans);
+                front.append(&mut back);
+                self.children = front;
+            }
+        }
+        self
+    }
+
+    pub fn isolate_nav_elements(&mut self) -> Vec<TuiNode> {
+        let nav_elems = vec![];
+        // TODO
+        // for each in children, if it is a nav element
+        // remove that child branch and push to nav_elems
+        nav_elems
+    }
+}
+impl std::default::Default for TuiNode {
+    fn default() -> Self { TuiNode { data: TuiNodeData::Phantom, children: Vec::new() }}
 }
 
+
+#[derive(Clone)]
 pub enum TuiNodeData {
     Element(TuiElement),
     Text(String),
     Comment(String),
-    Phantom, // TBD All but Phantom are rendered with a border/block
+    Phantom
+} impl TuiNodeData {
+    /// TODO Documentation
+    pub fn is_phantom(&self) -> bool { match self { Self::Phantom => true, _ => false }}
 }
 
+#[derive(Clone)]
 pub struct TuiElement {
     pub qual_name: html5ever::QualName,
     pub attributes: Vec<TuiAttribute>,
     pub contents: Vec<TuiNode>
-} impl TuiElement {}
+} impl TuiElement {
 
+}
+impl PartialEq for TuiElement {
+    fn eq(&self, other: &TuiElement) -> bool {
+        self.qual_name == other.qual_name
+    }
+}
+
+
+#[derive(Clone)]
 pub struct TuiAttribute(pub String);
 
 /*
@@ -248,8 +297,6 @@ pub struct TuiAttribute(pub String);
 */
 
 
-// TBD Isolate nav elements
-// Find top nav bar & sidebar
 
 // Other elements like text area
 
