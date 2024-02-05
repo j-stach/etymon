@@ -56,7 +56,7 @@ pub struct Etymon {
         if let Some(url) = url { page = url.to_owned() }
         else { let url = crate::CONFIG.homepage.clone(); page = url }
 
-        self.tui().display.new_tab(tab.get_target_id(), &tab.get_title()?)?;
+        self.tui().display.new_tab(tab.get_target_id(), &tab.get_title()?)?; // TODO Truncate title to first word
         self.load_page(&tab, &page)?;
         Ok(())
     }

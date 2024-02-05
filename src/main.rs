@@ -15,7 +15,7 @@
  * 10. Update TUI upon response from chrome
 */
 
-pub mod config; pub use config::CONFIG;
+#[macro_use] pub mod config; pub use config::CONFIG;
 pub mod utils; use utils::init_panic_handler;
 pub mod browser;
 pub mod tui;

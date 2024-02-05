@@ -54,6 +54,7 @@ pub struct ConfigOptions {
             amnesia: true,
             useful_nodes: [Element, Text].into_iter().collect(),
             cursor_controls: CursorControls::WASD,
+            // TODO Currently unused:
             fn_keymap: FnKeymap::default(),
             char_keymap: CharKeymap::default(),
             alt_keymap: CharKeymap::default(),

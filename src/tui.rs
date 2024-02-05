@@ -247,7 +247,9 @@ pub struct TuiAttribute(pub String);
 // TBD Isolate nav elements
 // Find top nav bar & sidebar
 
+// Other elements like text area
 
+// popup dialog
 
 
 
