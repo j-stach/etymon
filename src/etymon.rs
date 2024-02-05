@@ -69,7 +69,7 @@ pub struct Etymon {
         Ok(())
     }
 
-    /// Gracefully exit Etymon to terminal.
+    /// Gracefully exit to shell.
     pub fn quit(&mut self) {
         self.should_quit = true;
         if let Err(_) = self.tui().quit() {

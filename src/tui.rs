@@ -39,6 +39,7 @@ pub struct Tui {
         Ok(())
     }
 
+    /// Stores the cursor position to allow redrawing of display.
     pub fn cache_cursor(&mut self) -> Result<(), anyhow::Error>{
         self.cursor_cache = self.terminal.get_cursor()?;
         Ok(())
@@ -54,14 +55,10 @@ pub struct Tui {
         Ok(())
     }
 
-    // TODO
-    pub async fn handle_input(&self) {
-
-    }
-
+    /// TBD Runs destructors and resets terminal changes.
     pub fn quit(&mut self) -> Result<(), anyhow::Error> {
-        crossterm::terminal::disable_raw_mode().expect("Disable raw mode during quit");
-        todo!{"Needs to clean up terminal events & state"}; // TODO
+        crossterm::terminal::disable_raw_mode()?;
+        Ok(())
     }
 }
 
