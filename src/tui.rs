@@ -13,6 +13,7 @@ use super::browser::*;
 pub struct Tui {
     pub terminal: Terminal<Backend<std::io::Stdout>>,
     pub display: TuiDisplay,
+    pub cursor_cache: (u16, u16),
 } impl Tui {
 
     /// Initializes the TUI on startup. Panics if a new terminal can't be generated.
@@ -21,7 +22,7 @@ pub struct Tui {
         let screen = std::io::stdout();
         if let Ok(terminal) = Terminal::new(Backend::new(screen)) {
             let display = TuiDisplay::new();
-            Self { terminal, display }
+            Self { terminal, display, cursor_cache: (0, 0)}
         } else { panic!("Fatal Error: `Tui::init()` failed to create frontend!") }
     }
 
@@ -38,11 +39,17 @@ pub struct Tui {
         Ok(())
     }
 
+    pub fn cache_cursor(&mut self) -> Result<(), anyhow::Error>{
+        self.cursor_cache = self.terminal.get_cursor()?;
+        Ok(())
+    }
+
     /// Redraw the TUI screen according to its Display layout.
     pub fn draw(&mut self) -> Result<(), anyhow::Error> {
         self.terminal.draw(|frame| {
             self.display.render(frame).expect("Display renders to frame."); // TODO Handle draw error with logging?
-            frame.set_cursor(0,0); // TODO DEBUG
+            let (x, y) = self.cursor_cache;
+            frame.set_cursor(x, y); // TODO DEBUG, causes reset to 0, 0 on redraw.
         })?;
         Ok(())
     }
@@ -122,7 +129,7 @@ pub struct TuiDisplay {
                 .split(layout[1])
         };
 
-        let tab_content = Block::default().borders(Borders::ALL).title("Page COntent");
+        let tab_content = Block::default().borders(Borders::ALL).title("Page Content");
         frame.render_widget(tab_content, layout[0]);
 
         let tab_titles = self.tab_titles();

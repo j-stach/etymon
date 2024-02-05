@@ -15,12 +15,15 @@ pub enum UIMode {
 }
 impl Etymon {
 
-    #[allow(non_snake_case)]
+    /// Loops for duration to process user input, then breaks to allow backend to run.
     pub fn handle_ui(&mut self) -> Result<(), anyhow::Error> { // TODO Replace with async for simultaneous keys
+        let start = std::time::Instant::now();
+        let delay = (1000.0 / crate::CONFIG.frame_rate) as u64;
+        let duration = std::time::Duration::from_millis(delay);
+
         use UIMode::*;
-        let event = read()?;
-        loop {
-            // TBD Timeout?
+        while start.elapsed() < duration {
+            let event = read()?;
             match event {
                 Event::FocusGained => {/* TBD */},
                 Event::FocusLost => {/* TBD */},
@@ -33,6 +36,8 @@ impl Etymon {
                 Event::Resize(_width, _height) => {/* TBD */},
             }
         }
+
+        Ok(self.tui().cache_cursor()?)
     }
 
     /// Process keyboard events in View mode.
