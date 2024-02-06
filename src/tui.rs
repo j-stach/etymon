@@ -129,6 +129,10 @@ pub struct TuiDisplay {
         let tab_content = Block::default().borders(Borders::ALL).title("Page Content");
         frame.render_widget(tab_content, layout[0]);
 
+        // TODO Debug: Recursion fails to resolve and program hangs
+        //let current_page = &self.tabs[self.current_tab];
+        //current_page.render_page(frame);
+
         let tab_titles = self.tab_titles();
         let tab_list = self.navbar.render_tab_list(tab_titles);
         let command_line = self.navbar.render_command_line();
@@ -190,22 +194,37 @@ pub struct TuiTab {
     }
 
     pub fn update(&mut self, dom: TuiNode, title: &str) -> Result<(), anyhow::Error> {
-        self.dom = dom.collapse_phantoms();
+        self.dom = dom;
+        self.dom.collapse_phantoms();
         self.title = title.to_owned();
         self.update_layout();
         Ok(()) // TBD
     }
 
     pub fn update_layout(&mut self) {
-
         let nav = self.dom.isolate_nav_elements();
         // TBD Isolate nav elements: Find top nav bar & sidebar
         // then, in descending order, flatten the tree into a stack of paragraphs
+        let dom = self.dom.flatten();
+        let mut constraints = vec![];
 
+        for _ in dom.iter() {
+            constraints.push(Constraint::Min(1))
+        }
+        let layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(constraints);
 
-
-        let layout = Layout::default();
         self.layout = layout;
+    }
+
+    pub fn render_page(&self, frame: &mut Frame) {
+        // TBD dont use whole page, save room for navbars & menus
+        let layout = self.layout.split(frame.size());
+        for (n, node) in self.dom.flatten().iter().enumerate() {
+            frame.render_widget(node.render_node(), layout[n]);
+        }
+
     }
 
 
@@ -226,29 +245,60 @@ pub struct TuiNode {
     pub data: TuiNodeData,
     pub children: Vec<TuiNode>
 } impl TuiNode {
-    pub fn collapse_phantoms(mut self) -> Self {
-        // TBD Does it matter if the root node is a Phantom?
-        for (c, child) in self.children.iter().enumerate() {
-            child.collapse_phantoms();
-            if child.data.is_phantom() {
-                let (front, back) = self.children.split_at(c);
-                let (mut front, mut back) = (front.to_vec(), back.to_vec());
-                let c = front.pop().expect("Removed phantom");
-                let mut orphans = c.children.clone();
-                front.append(&mut orphans);
-                front.append(&mut back);
-                self.children = front;
-            }
+
+    pub fn collapse_phantoms(&mut self) {
+        let phantoms: Vec<_> = self.children.iter_mut().enumerate()
+            .filter_map(|(c, child)| {
+                child.collapse_phantoms();
+                if child.data.is_phantom() { Some(c) } else { None }
+            })
+            .collect();
+
+        for p in phantoms.iter().rev() {
+            self.replace_phantom_with_children(*p);
         }
-        self
+    }
+
+    fn replace_phantom_with_children(&mut self, index: usize) {
+        let (front, back) = self.children.split_at(index);
+        let (mut front, mut back) = (front.to_vec(), back.to_vec());
+        if let Some(c) = front.pop() { // TODO Debug: Am I removing phantoms?
+            let mut orphans = c.children.clone();
+            front.append(&mut orphans);
+            front.append(&mut back);
+            self.children = front;
+        }
     }
 
     pub fn isolate_nav_elements(&mut self) -> Vec<TuiNode> {
-        let nav_elems = vec![];
+        let nav_elements = vec![];
         // TODO
         // for each in children, if it is a nav element
         // remove that child branch and push to nav_elems
-        nav_elems
+        nav_elements
+    }
+
+    pub fn flatten(&self) -> Vec<&TuiNode> {
+        let mut flattened = vec![];
+        flattened.push(self);
+        for child in self.children.iter() {
+            flattened.append(&mut child.flatten())
+        }
+        flattened
+    }
+
+    pub fn render_node(&self) -> impl Widget {
+        use TuiNodeData::*;
+        match &self.data {
+            Element(elem) => {/* TBD */ todo!{"Render elements!"}},
+            Text(text) => {
+                Paragraph::new(text.clone()).block(Block::default().borders(Borders::NONE))
+            },
+            Comment(text) => { todo!{"Render comments!"}},
+            _ => {
+                Paragraph::new("Hmm... I am not a useful node, why am I here?").block(Block::default().borders(Borders::NONE))
+            }
+        }
     }
 }
 impl std::default::Default for TuiNode {
@@ -271,11 +321,11 @@ pub enum TuiNodeData {
 pub struct TuiElement {
     pub qual_name: html5ever::QualName,
     pub attributes: Vec<TuiAttribute>,
-    pub contents: Vec<TuiNode>
+    // TBD
+    //pub template: Vec<TuiNode>
 } impl TuiElement {
 
-}
-impl PartialEq for TuiElement {
+} impl PartialEq for TuiElement {
     fn eq(&self, other: &TuiElement) -> bool {
         self.qual_name == other.qual_name
     }

@@ -61,6 +61,7 @@ impl ToTui for kuchikiki::Node {
     type TuiType = tui::TuiNode;
     fn to_tui(&self) -> Self::TuiType {
         tui::TuiNode {
+            data: self.data().to_tui(),
             children: if let Some(child) = self.first_child() {
                 child.inclusive_following_siblings().map(|c| c.to_tui()).collect()
             } else { vec![] }
@@ -88,11 +89,12 @@ impl ToTui for kuchikiki::ElementData {
         tui::TuiElement {
             qual_name: self.name.clone(),
             attributes: self.attributes.borrow().map.iter().map(|(_, a)| a.to_tui()).collect(),
-            contents: {
-                if let Some(node) = &self.template_contents {
-                    node.inclusive_following_siblings().map(|c| c.to_tui()).collect()
-                } else { vec![] }
-            }
+            // TBD
+            //contents: {
+            //    if let Some(node) = &self.template_contents {
+            //        node.inclusive_following_siblings().map(|c| c.to_tui()).collect()
+            //    } else { vec![] }
+            //}
         }
     }
 }
