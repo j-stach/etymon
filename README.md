@@ -1,4 +1,4 @@
-# etymon
+# etymon (WIP)
 Chrome-based web browser with a TUI frontend.
 
 Core principles:
